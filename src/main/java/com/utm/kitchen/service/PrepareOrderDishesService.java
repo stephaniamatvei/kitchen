@@ -2,6 +2,7 @@ package com.utm.kitchen.service;
 
 import com.utm.kitchen.core.entity.CustomerOrder;
 import com.utm.kitchen.core.entity.Dish;
+import com.utm.kitchen.core.repository.CookRepository;
 import liquibase.repackaged.org.apache.commons.lang3.time.DurationFormatUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PrepareOrderDishesService {
+    private final CookRepository cookRepository;
     private final SendOrderResultService sendOrderResultService;
     private final ApplicationContext applicationContext;
 
@@ -53,12 +55,20 @@ public class PrepareOrderDishesService {
     Future<Void> prepareDish(Long orderId, Dish dish) {
         final var dishCode = dish.getCode();
         final var preparationTime = dish.getPreparationTime();
+        final var requiredCookProficiency = dish.getRequiredCookProficiency();
 
-        log.info("Started preparing dish '{}' for order '{}'", dishCode, orderId);
-        Thread.sleep(calculatePreparationMillis(preparationTime));
+        cookRepository.findFreeByProficiency(requiredCookProficiency).ifPresent((c) -> {
+            log.info("Started preparing dish '{}' for order '{}'", dishCode, orderId);
+            blockThread(calculatePreparationMillis(preparationTime));
+            log.info("Finished preparing dish '{}' for order '{}'", dishCode, orderId);
+        });
 
-        log.info("Finished preparing dish '{}' for order '{}'", dishCode, orderId);
         return new AsyncResult<>(null);
+    }
+
+    @SneakyThrows
+    private void blockThread(long millis) {
+        Thread.sleep(millis);
     }
 
     @SneakyThrows
