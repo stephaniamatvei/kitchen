@@ -1,12 +1,11 @@
-
-
-# *Network Programming - Laboratory Work Nr.1*
-
 ## *Kitchen Component*
+Microservice for preparing orders received from the dinning hall
 
-## Table of Contents
+## Used technologies
+Postgres, Java 11, Spring Boot, Docker
 
-* [Task](#task)
-    
-## Task
-The purpose of this laboratory work is to create a realistic simulation of how a restaurant works.
+## How to run?
+
+* Make sure you have cloned dinning hall repo
+* Make sure you have installed docker
+* From parent folder run "docker-compose up"
