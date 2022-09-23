@@ -28,10 +28,13 @@ public class CreateOrderService {
         order.setMaxWait(command.getMaxWait());
         order.setPickUpTime(command.getPickUpTime());
         order.setDishes(dishRepository.findById(command.getItems()));
+        order.setDistributed(false);
 
-        final var savedOrder = customerOrderRepository.save(order);
+        customerOrderRepository.save(order);
+        final var orderWithHighestPriority = customerOrderRepository.findWithHighestPriority();
+
         // THREAD 2 for food preparation launches
-        prepareOrderDishesService.invoke(savedOrder);
+        prepareOrderDishesService.invoke(orderWithHighestPriority);
 
         // THREAD 1 finishes its execution returning its order code as response
         log.info("Successfully created order '{}'", order.getId());

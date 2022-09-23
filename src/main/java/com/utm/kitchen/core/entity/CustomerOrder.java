@@ -22,6 +22,9 @@ public class CustomerOrder {
     private int maxWait;
     private Instant pickUpTime;
 
+    @Column(name = "distributed")
+    private boolean isDistributed;
+
     @ManyToMany
     @JoinTable(
             name = "customer_order_dish",

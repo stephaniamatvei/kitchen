@@ -3,6 +3,7 @@ package com.utm.kitchen.service;
 import com.utm.kitchen.core.entity.CustomerOrder;
 import com.utm.kitchen.core.entity.Dish;
 import com.utm.kitchen.core.repository.CookRepository;
+import com.utm.kitchen.core.repository.CustomerOrderRepository;
 import liquibase.repackaged.org.apache.commons.lang3.time.DurationFormatUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PrepareOrderDishesService {
     private final CookRepository cookRepository;
+    private final CustomerOrderRepository orderRepository;
     private final SendOrderResultService sendOrderResultService;
     private final ApplicationContext applicationContext;
 
@@ -63,6 +65,7 @@ public class PrepareOrderDishesService {
             log.info("Finished preparing dish '{}' for order '{}'", dishCode, orderId);
         });
 
+        orderRepository.findById(orderId).orElseThrow().setDistributed(true);
         return new AsyncResult<>(null);
     }
 

@@ -50,7 +50,8 @@ create table customer_order
     table_id     bigint      not null,
     priority     numeric     not null,
     max_wait     numeric     not null,
-    pick_up_time timestamptz not null
+    pick_up_time timestamptz not null,
+    distributed  boolean     not null default false
 );
 
 create table customer_order_dish
