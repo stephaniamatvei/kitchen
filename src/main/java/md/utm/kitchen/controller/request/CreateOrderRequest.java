@@ -1,4 +1,4 @@
-package com.utm.kitchen.controller.request;
+package md.utm.kitchen.controller.request;
 
 import lombok.Value;
 

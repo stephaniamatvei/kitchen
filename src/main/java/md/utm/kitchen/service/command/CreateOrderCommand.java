@@ -1,4 +1,4 @@
-package com.utm.kitchen.service.command;
+package md.utm.kitchen.service.command;
 
 import lombok.Builder;
 import lombok.Value;

@@ -1,8 +1,8 @@
-package com.utm.kitchen.controller;
+package md.utm.kitchen.controller;
 
-import com.utm.kitchen.controller.request.CreateOrderRequest;
-import com.utm.kitchen.service.CreateOrderService;
-import com.utm.kitchen.service.command.CreateOrderCommand;
+import md.utm.kitchen.controller.request.CreateOrderRequest;
+import md.utm.kitchen.service.OrderService;
+import md.utm.kitchen.service.command.CreateOrderCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,7 +16,7 @@ import javax.validation.Valid;
 @RequestMapping("order")
 @RequiredArgsConstructor
 public class OrderController {
-    private final CreateOrderService createOrderService;
+    private final OrderService createOrderService;
 
     @RequestMapping(method = RequestMethod.POST)
     public ResponseEntity<?> createOrder(@RequestBody @Valid CreateOrderRequest request) {
@@ -30,8 +30,7 @@ public class OrderController {
                 .pickUpTime(request.getPickUpTime())
                 .build();
 
-        // THREAD 1 for saving order to db launches
-        createOrderService.invoke(command);
+        createOrderService.createOrder(command);
         return ResponseEntity.noContent().build();
     }
 }

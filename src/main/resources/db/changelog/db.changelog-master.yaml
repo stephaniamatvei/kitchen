@@ -1,3 +1,0 @@
-databaseChangeLog:
-  - include:
-      file: classpath:db/changelog/migrations/db.changesets.1.sql
