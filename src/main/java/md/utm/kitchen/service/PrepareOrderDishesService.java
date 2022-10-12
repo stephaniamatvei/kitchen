@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -58,7 +59,10 @@ public class PrepareOrderDishesService {
                 .collect(Collectors.toList());
 
         final var cook = suitableCooks.stream().filter((c) -> c.getLock().tryLock()).findAny().orElseGet(() -> {
-            var c = suitableCooks.stream().findAny().orElseThrow();
+            final var c = suitableCooks.stream()
+                    .min(Comparator.comparingInt(i -> i.getLock().getQueueLength()))
+                    .orElseThrow();
+
             c.getLock().lock();
             return c;
         });
@@ -82,13 +86,13 @@ public class PrepareOrderDishesService {
         }
 
         if (timeUnit.equals("MINUTE")) {
-            return preparationTime * 1000L * 60;
+            return preparationTime * 1000L * 60 / 20;
         }
 
         if (timeUnit.equals("HOUR")) {
-            return preparationTime * 1000L * 60 * 60;
+            return preparationTime * 1000L * 60 * 60 / 20;
         }
 
-        return preparationTime * 1000L;
+        return preparationTime * 1000L / 20;
     }
 }
