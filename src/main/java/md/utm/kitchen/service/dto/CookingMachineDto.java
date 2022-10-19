@@ -1,12 +1,17 @@
 package md.utm.kitchen.service.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import lombok.*;
+
+import java.util.concurrent.locks.ReentrantLock;
 
 @Getter
-@AllArgsConstructor
+@RequiredArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class CookingMachineDto {
-    private String code;
+    private final Long id;
+
+    @EqualsAndHashCode.Include
+    private final String apparatusCode;
+
+    private final ReentrantLock lock = new ReentrantLock();
 }

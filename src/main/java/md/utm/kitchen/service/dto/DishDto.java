@@ -13,5 +13,5 @@ public class DishDto {
     private String code;
     private int preparationTime;
     private int requiredCookProficiency;
-    private CookingMachineDto cookingMachine;
+    private String cookingMachine;
 }

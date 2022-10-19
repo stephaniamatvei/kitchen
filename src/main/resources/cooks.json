@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "givenName": "John",
+    "lastName": "K",
+    "catchPhrase": "Hello",
+    "cookRank": 3,
+    "cookProficiency": 4
+  },
+  {
+    "id": 2,
+    "givenName": "Eva",
+    "lastName": "B",
+    "catchPhrase": "Hiya",
+    "cookRank": 2,
+    "cookProficiency": 3
+  },
+  {
+    "id": 3,
+    "givenName": "Alisa",
+    "lastName": "D",
+    "catchPhrase": "Yes",
+    "cookRank": 2,
+    "cookProficiency": 2
+  },
+  {
+    "id": 4,
+    "givenName": "Irwin",
+    "lastName": "S",
+    "catchPhrase": "Let's do it",
+    "cookRank": 1,
+    "cookProficiency": 2
+  }
+]

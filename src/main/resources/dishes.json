@@ -1,0 +1,93 @@
+[
+  {
+    "id": 1,
+    "code": "PIZZA",
+    "preparationTime": 20,
+    "requiredCookRank": 2,
+    "cookingMachine": "OVEN"
+  },
+  {
+    "id": 2,
+    "code": "SALAD",
+    "preparationTime": 10,
+    "requiredCookRank": 1,
+    "cookingMachine": null
+  },
+  {
+    "id": 3,
+    "code": "ZEAMA",
+    "preparationTime": 7,
+    "requiredCookRank": 1,
+    "cookingMachine": "STOVE"
+  },
+  {
+    "id": 4,
+    "code": "SCALLOP_SASHIMI_MEYER_LEMON",
+    "preparationTime": 32,
+    "requiredCookRank": 3,
+    "cookingMachine": null
+  },
+  {
+    "id": 5,
+    "code": "ISLAND_DUCK_MUSTARD",
+    "preparationTime": 35,
+    "requiredCookRank": 3,
+    "cookingMachine": "OVEN"
+  },
+  {
+    "id": 6,
+    "code": "WAFFLES",
+    "preparationTime": 10,
+    "requiredCookRank": 1,
+    "cookingMachine": "STOVE"
+  },
+  {
+    "id": 7,
+    "code": "AUBERGINE",
+    "preparationTime": 20,
+    "requiredCookRank": 2,
+    "cookingMachine": "OVEN"
+  },
+  {
+    "id": 8,
+    "code": "LASAGNA",
+    "preparationTime": 30,
+    "requiredCookRank": 2,
+    "cookingMachine": "OVEN"
+  },
+  {
+    "id": 9,
+    "code": "BURGER",
+    "preparationTime": 15,
+    "requiredCookRank": 1,
+    "cookingMachine": "STOVE"
+  },
+  {
+    "id": 10,
+    "code": "GYROS",
+    "preparationTime": 15,
+    "requiredCookRank": 1,
+    "cookingMachine": null
+  },
+  {
+    "id": 11,
+    "code": "KEBAB",
+    "preparationTime": 15,
+    "requiredCookRank": 1,
+    "cookingMachine": null
+  },
+  {
+    "id": 12,
+    "code": "UNAGI_MAKI",
+    "preparationTime": 20,
+    "requiredCookRank": 2,
+    "cookingMachine": null
+  },
+  {
+    "id": 13,
+    "code": "TOBACCO_CHICKEN",
+    "preparationTime": 30,
+    "requiredCookRank": 2,
+    "cookingMachine": "OVEN"
+  }
+]
