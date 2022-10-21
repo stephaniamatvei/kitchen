@@ -3,8 +3,8 @@ package md.utm.kitchen.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import md.utm.kitchen.service.dto.CustomerOrderDto;
-import md.utm.kitchen.service.dto.DishDto;
+import md.utm.kitchen.model.CustomerOrder;
+import md.utm.kitchen.model.Dish;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -23,16 +23,14 @@ public class SendOrderResultService {
 
     @Value("${app.diningHallResultEndpointUrl}")
     private String diningHallResultEndpointUrl;
-
     private WebClient client;
 
     @PostConstruct
     public void postConstruct() {
-        client = WebClient.builder()
-                .baseUrl(diningHallResultEndpointUrl).build();
+        client = WebClient.builder().baseUrl(diningHallResultEndpointUrl).build();
     }
 
-    public void invoke(CustomerOrderDto order) {
+    public void invoke(CustomerOrder order) {
         log.info("Sending result for order '{}' to dining hall...", order.getId());
 
         client.post()
@@ -44,9 +42,9 @@ public class SendOrderResultService {
     }
 
     @SneakyThrows
-    private String createRequest(CustomerOrderDto order) {
+    private String createRequest(CustomerOrder order) {
         final var dishes = order.getDishes().stream()
-                .map(DishDto::getId).collect(Collectors.toList());
+                .map(Dish::getId).collect(Collectors.toList());
 
         final var request = Request.builder()
                 .orderId(order.getId())

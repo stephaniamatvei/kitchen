@@ -8,24 +8,11 @@ import java.util.List;
 
 @Value
 public class CreateOrderRequest {
-    @NotNull
-    Long orderId;
-
-    @NotNull
-    Long tableId;
-
-    @NotNull
-    Long waiterId;
-
-    @NotNull
-    List<Long> items;
-
-    @NotNull
-    Integer priority;
-
-    @NotNull
-    Integer maxWait;
-
-    @NotNull
-    Instant pickUpTime;
+    @NotNull Long orderId;
+    @NotNull Long tableId;
+    @NotNull Long waiterId;
+    @NotNull List<Long> items;
+    @NotNull Integer priority;
+    @NotNull Integer maxWait;
+    @NotNull Instant pickUpTime;
 }

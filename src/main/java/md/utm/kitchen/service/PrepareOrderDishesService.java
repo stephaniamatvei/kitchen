@@ -3,120 +3,109 @@ package md.utm.kitchen.service;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import md.utm.kitchen.service.dto.CookDto;
-import md.utm.kitchen.service.dto.CookingMachineDto;
-import md.utm.kitchen.service.dto.CustomerOrderDto;
-import md.utm.kitchen.service.dto.DishDto;
+import md.utm.kitchen.model.Cook;
+import md.utm.kitchen.model.CookingMachine;
+import md.utm.kitchen.model.CustomerOrder;
+import md.utm.kitchen.model.Dish;
+import md.utm.kitchen.repository.CookRepository;
+import md.utm.kitchen.repository.CookingMachineRepository;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Comparator.comparingLong;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PrepareOrderDishesService {
+    private final CookRepository cookRepository;
+    private final CookingMachineRepository cookingMachineRepository;
     private final SendOrderResultService sendOrderResultService;
-    private final OrderDataService orderDataService;
 
-    private List<CookDto> cooks;
-    private List<CookingMachineDto> cookingMachines;
+    private List<Cook> cooks;
+    private List<CookingMachine> cookingMachines;
 
-    private final List<CustomerOrderDto> customerOrders = Collections.synchronizedList(new ArrayList<>());
+    private final List<CustomerOrder> orders = Collections.synchronizedList(new ArrayList<>());
 
     @PostConstruct
     public void postConstruct() {
-        cooks = orderDataService.readCooks();
-        cookingMachines = orderDataService.readCookingMachines();
+        cooks = cookRepository.findAll();
+        cookingMachines = cookingMachineRepository.findAll();
     }
 
-    public void invoke(CustomerOrderDto order) {
-        customerOrders.add(order);
+    public void invoke(CustomerOrder newOrder) {
+        orders.add(newOrder);
 
-        final var startTime = System.currentTimeMillis();
+        cooks.stream()
+                .filter((c) -> c.getIsWorking().compareAndSet(false, true))
+                .forEach((c) -> new Thread(() -> initCookWork(c)).start());
+    }
+
+    @SneakyThrows
+    private void initCookWork(Cook cook) {
+        if (cook.getPendingDishes().get() == cook.getCookProficiency()) {
+            Thread.sleep(50L);
+            initCookWork(cook);
+            return;
+        }
+
+        getPendingOrderWithLeastTimeLeft(cook).ifPresent((o) ->
+                new Thread(() -> findDishAndStartPreparation(cook, o)).start());
+
+        if (orders.isEmpty()) {
+            log.info("Cook {} has finished work", cook.getId());
+
+            cook.getIsWorking().set(false);
+            return;
+        }
+
+        Thread.sleep(50L);
+        initCookWork(cook);
+    }
+
+    private Optional<CustomerOrder> getPendingOrderWithLeastTimeLeft(Cook cook) {
+        return orders.stream()
+                .sorted(comparingLong((i) -> i.getMaxWait() - SECONDS.between(i.getPickUpTime(), Instant.now())))
+                .filter((i) -> i.getDishes().stream().anyMatch((d) -> d.getRequiredCookRank() <= cook.getCookRank() && d.getAssignedCookId().get() == 0))
+                .findFirst();
+    }
+
+    private void findDishAndStartPreparation(Cook cook, CustomerOrder order) {
+        order.getDishes().stream()
+                .filter((i) -> i.getRequiredCookRank() <= cook.getCookRank() && i.getAssignedCookId().compareAndSet(0, cook.getId()))
+                .findAny()
+                .ifPresent((d) -> prepareDish(cook, d, order));
+    }
+
+    private void prepareDish(Cook cook, Dish dish, CustomerOrder order) {
+        final var cookId = cook.getId();
+        final var dishCode = dish.getCode();
         final var orderId = order.getId();
 
-        log.info("Started preparing dishes for order '{}'", orderId);
+        log.info("Cook {} started working on dish {} for order {}", cookId, dishCode, orderId);
 
-        final var es = Executors.newFixedThreadPool(1000);
-        order.getDishes().forEach((d) -> es.execute(() -> prepareDish(orderId, d)));
-        es.shutdown();
+        cook.getPendingDishes().incrementAndGet();
+        blockThread(calculatePreparationTime(dish.getPreparationTime()));
+        cook.getPendingDishes().decrementAndGet();
 
-        try {
-            es.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException ignored) {
+        log.info("Cook {} finished working on dish {} for order {}", cookId, dishCode, orderId);
+
+        if (order.getPendingDishesCount().decrementAndGet() == 0) {
+            sendOrderToDiningHall(order);
         }
+    }
 
-        final var endTime = System.currentTimeMillis();
-        final var duration = endTime - startTime;
-
-        log.info("Finished preparing dishes for order '{}' in {}", orderId, duration);
+    private void sendOrderToDiningHall(CustomerOrder order) {
+        orders.remove(order);
         sendOrderResultService.invoke(order);
     }
-
-    private void prepareDish(Long orderId, DishDto dish) {
-        final var dishCode = dish.getCode();
-        final var machine = getThreadLockedMachine(dish.getCookingMachine());
-        final var cook = getThreadLockedCook(dish.getRequiredCookProficiency());
-        final var cookId = cook.getId();
-
-        machine.ifPresentOrElse(
-                (m) -> log.info("Cook '{}' started preparing dish '{}' in '{}' for order '{}'", cookId, dishCode, m.getApparatusCode(), orderId),
-                () -> log.info("Cook '{}' started preparing dish '{}' for order '{}'", cookId, dishCode, orderId));
-
-        machine.ifPresent((m) -> cook.getLock().unlock());
-        blockThread(calculatePreparationTime(dish.getPreparationTime()));
-
-        if (machine.isEmpty()) {
-            cook.getLock().unlock();
-        }
-
-        machine.ifPresent((m) -> m.getLock().unlock());
-
-        log.info("Cook '{}' finished preparing dish '{}' for order '{}'", cookId, dishCode, orderId);
-    }
-
-    // prepare foods according to cook's PROFICIENCY
-    private CookDto getThreadLockedCook(int requiredCookRank) {
-        final var suitableCooks = cooks.stream()
-                .filter((i) -> i.getCookRank() >= requiredCookRank)
-                .collect(Collectors.toList());
-
-        return suitableCooks.stream().filter((c) -> c.getLock().tryLock()).findAny().orElseGet(() -> {
-            final var c = suitableCooks.stream()
-                    .min(Comparator.comparingInt(i -> i.getLock().getQueueLength()))
-                    .orElseThrow();
-
-            c.getLock().lock();
-            return c;
-        });
-    }
-
-    // prepare foods using COOKING APPARATUSES
-    private Optional<CookingMachineDto> getThreadLockedMachine(String requiredMachine) {
-        if (requiredMachine == null) {
-            return Optional.empty();
-        }
-
-        final var suitableMachines = cookingMachines.stream()
-                .filter((i) -> i.getApparatusCode().equals(requiredMachine))
-                .collect(Collectors.toList());
-
-        final var result = suitableMachines.stream().filter((m) -> m.getLock().tryLock()).findAny().orElseGet(() -> {
-            final var m = suitableMachines.stream()
-                    .min(Comparator.comparingInt(i -> i.getLock().getQueueLength()))
-                    .orElseThrow();
-
-            m.getLock().lock();
-            return m;
-        });
-
-        return Optional.of(result);
-    }
-
 
     @SneakyThrows
     private void blockThread(long millis) {
