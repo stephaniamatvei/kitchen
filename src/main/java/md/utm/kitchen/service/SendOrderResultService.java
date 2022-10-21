@@ -43,15 +43,19 @@ public class SendOrderResultService {
 
     @SneakyThrows
     private String createRequest(CustomerOrder order) {
-        final var dishes = order.getDishes().stream()
-                .map(Dish::getId).collect(Collectors.toList());
+        final var dishes = order.getDishes();
+        final var items = dishes.stream().map(Dish::getId).collect(Collectors.toList());
+
+        final var cookingDetails = dishes.stream()
+                .map((d) -> new Request.CookingDetailsItem(d.getId(), d.getAssignedCookId().get()))
+                .collect(Collectors.toList());
 
         final var request = Request.builder()
                 .orderId(order.getId())
                 .tableId(order.getTableId())
                 .waiterId(order.getWaiterId())
-                .items(dishes)
-                .cookingDetails(List.of())
+                .items(items)
+                .cookingDetails(cookingDetails)
                 .priority(order.getPriority())
                 .maxWait(order.getMaxWait())
                 .pickUpTime(order.getPickUpTime())
