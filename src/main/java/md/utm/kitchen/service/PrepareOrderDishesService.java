@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Comparator.comparingInt;
 import static java.util.Comparator.comparingLong;
 
 @Slf4j
@@ -89,17 +90,48 @@ public class PrepareOrderDishesService {
         final var dishCode = dish.getCode();
         final var orderId = order.getId();
 
-        log.info("Cook {} started working on dish {} for order {}", cookId, dishCode, orderId);
-
-        cook.getPendingDishes().incrementAndGet();
-        blockThread(calculatePreparationTime(dish.getPreparationTime()));
-        cook.getPendingDishes().decrementAndGet();
-
-        log.info("Cook {} finished working on dish {} for order {}", cookId, dishCode, orderId);
+        getThreadLockedCookingMachine(dish).ifPresentOrElse(
+                (m) -> {
+                    final var apparatusCode = m.getApparatusCode();
+                    log.info("Cook {} started working on dish {} using {} for order {}", cookId, dishCode, apparatusCode, orderId);
+                    blockThread(calculatePreparationTime(dish.getPreparationTime()));
+                    m.getLock().unlock();
+                    log.info("Cook {} finished working on dish {} using {} for order {}", cookId, dishCode, apparatusCode, orderId);
+                },
+                () -> {
+                    log.info("Cook {} started working on dish {} for order {}", cookId, dishCode, orderId);
+                    cook.getPendingDishes().incrementAndGet();
+                    blockThread(calculatePreparationTime(dish.getPreparationTime()));
+                    cook.getPendingDishes().decrementAndGet();
+                    log.info("Cook {} finished working on dish {} for order {}", cookId, dishCode, orderId);
+                });
 
         if (order.getPendingDishesCount().decrementAndGet() == 0) {
             sendOrderToDiningHall(order);
         }
+    }
+
+    private Optional<CookingMachine> getThreadLockedCookingMachine(Dish dish) {
+        final var cookingMachineCode = dish.getCookingMachine();
+
+        if (cookingMachineCode == null) {
+            return Optional.empty();
+        }
+
+        final var cookingMachine = cookingMachines.stream()
+                .filter((i) -> i.getApparatusCode().equals(cookingMachineCode) && i.getLock().tryLock()).findAny();
+
+        if (cookingMachine.isPresent()) {
+            return cookingMachine;
+        }
+
+        return cookingMachines.stream()
+                .filter((i) -> i.getApparatusCode().equals(cookingMachineCode))
+                .min(comparingInt((i) -> i.getLock().getQueueLength()))
+                .map((m) -> {
+                    m.getLock().lock();
+                    return m;
+                });
     }
 
     private void sendOrderToDiningHall(CustomerOrder order) {
