@@ -1,8 +1,8 @@
 ## *Kitchen Component*
-Microservice for preparing orders received from the dinning hall
+Microservice for preparing orders received from the dining hall
 
 ## Used technologies
-Postgres, Java 11, Spring Boot, Docker
+Java 11, Spring Boot, Docker
 
 ## How to run?
 
