@@ -41,6 +41,7 @@ public class PrepareOrderDishesService {
         cookingMachines = cookingMachineRepository.findAll();
     }
 
+    // new thread starts for each cook
     public void invoke(CustomerOrder newOrder) {
         orders.add(newOrder);
 
@@ -49,10 +50,10 @@ public class PrepareOrderDishesService {
                 .forEach((c) -> new Thread(() -> initCookWork(c)).start());
     }
 
-    @SneakyThrows
+    // the logic of preparing dishes according to cook's proficiency
     private void initCookWork(Cook cook) {
         if (cook.getPendingDishes().get() == cook.getCookProficiency()) {
-            Thread.sleep(50L);
+            blockThread(50L);
             initCookWork(cook);
             return;
         }
@@ -67,7 +68,7 @@ public class PrepareOrderDishesService {
             return;
         }
 
-        Thread.sleep(50L);
+        blockThread(50L);
         initCookWork(cook);
     }
 
@@ -85,6 +86,7 @@ public class PrepareOrderDishesService {
                 .ifPresent((d) -> prepareDish(cook, d, order));
     }
 
+    // the logic of preparing dishes
     private void prepareDish(Cook cook, Dish dish, CustomerOrder order) {
         final var cookId = cook.getId();
         final var dishCode = dish.getCode();
@@ -111,6 +113,7 @@ public class PrepareOrderDishesService {
         }
     }
 
+    // the logic of preparing dishes using cooking machine
     private Optional<CookingMachine> getThreadLockedCookingMachine(Dish dish) {
         final var cookingMachineCode = dish.getCookingMachine();
 
