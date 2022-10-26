@@ -12,15 +12,12 @@ import md.utm.kitchen.repository.CookingMachineRepository;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Comparator.comparingInt;
-import static java.util.Comparator.comparingLong;
 
 @Slf4j
 @Service
@@ -74,9 +71,8 @@ public class PrepareOrderDishesService {
 
     private Optional<CustomerOrder> getPendingOrderWithLeastTimeLeft(Cook cook) {
         return orders.stream()
-                .sorted(comparingLong((i) -> i.getMaxWait() - SECONDS.between(i.getPickUpTime(), Instant.now())))
                 .filter((i) -> i.getDishes().stream().anyMatch((d) -> d.getRequiredCookRank() <= cook.getCookRank() && d.getAssignedCookId().get() == 0))
-                .findFirst();
+                .min(comparingInt(i -> i.getDishes().stream().mapToInt(Dish::getPreparationTime).sum()));
     }
 
     private void findDishAndStartPreparation(Cook cook, CustomerOrder order) {
